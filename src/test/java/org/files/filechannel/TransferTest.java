@@ -1,13 +1,21 @@
 package org.files.filechannel;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TransferTest {
 
+	@BeforeClass
+	public static void createDir(){
+		new File("tmp").mkdir();
+	}
+	
 	@Before
 	public void setUp() throws Exception {
 	}
@@ -17,16 +25,16 @@ public class TransferTest {
 	}
 
 	@Test
-	public void testFileTransmitter4Th10Elements() throws IOException {
-		new FileTransmitter(4, "/home/carlos/visits.sqlite.db", generateOutputPaths(10));
+	public void testFileTransmitter4Th10Elements() throws IOException, URISyntaxException {
+		new FileTransmitter(4, "input.txt", generateOutputPaths(10));
 	}
 	@Test
-	public void testFileTransmitter4Th100Elements() throws IOException {
-		new FileTransmitter(4, "/home/carlos/visits.sqlite.db", generateOutputPaths(100));
+	public void testFileTransmitter4Th100Elements() throws IOException, URISyntaxException {
+		new FileTransmitter(4, "input.txt", generateOutputPaths(100));
 	}
 	@Test
-	public void testFileTransmitter4Th1000Elements() throws IOException {
-		new FileTransmitter(4, "/home/carlos/visits.sqlite.db", generateOutputPaths( 1000));
+	public void testFileTransmitter4Th1000Elements() throws IOException, URISyntaxException {
+		new FileTransmitter(4, "input.txt", generateOutputPaths( 1000));
 	}
 	
 	private static String[] generateOutputPaths( int e) {

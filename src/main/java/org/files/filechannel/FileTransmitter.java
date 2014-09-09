@@ -1,7 +1,9 @@
 package org.files.filechannel;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -20,13 +22,13 @@ public class FileTransmitter implements TransmitterListener {
 	private final FileInputStream fis;
 	private AtomicBoolean isFinished;
 
-	public FileTransmitter(int numberOfThreads, String from, String... to) throws IOException {
+	public FileTransmitter(int numberOfThreads, String from, String... to) throws IOException, URISyntaxException {
 		log = Logger.getLogger(getClass().getSimpleName() + " " + to.length);
 		log.log(Level.INFO, "Starting");
 		isFinished = new AtomicBoolean(false);
 		pending = new HashSet<>(Arrays.asList(to));
 		executor = Executors.newFixedThreadPool(numberOfThreads);
-		fis = new FileInputStream(from);
+		fis = new FileInputStream(new File(Thread.currentThread().getContextClassLoader().getResource(from).toURI()));
 
 		for (String t : to) {
 			log.log(Level.FINE, "Enqueue " + t);
