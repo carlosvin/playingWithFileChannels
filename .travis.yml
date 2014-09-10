@@ -1,0 +1,12 @@
+language: java
+
+jdk:
+  - oraclejdk7
+  
+install:
+  - git config --global user.email "carlosvin@gmail.com"
+  - git config --global user.name "carlosvin"
+
+script:
+  - gradle --profile test check
+  
