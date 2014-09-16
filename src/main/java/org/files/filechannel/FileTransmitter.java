@@ -1,9 +1,8 @@
 package org.files.filechannel;
 
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -13,49 +12,58 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class FileTransmitter implements TransmitterListener {
+/**
+ * Created by carlos on 16/09/14.
+ */
+public abstract class FileTransmitter {
 
-	private final ExecutorService executor;
-	private final Logger log;
+    protected final Logger log;
+    protected final ExecutorService executor;
 
-	private final Set<String> pending;
-	private final FileInputStream fis;
-	private AtomicBoolean isFinished;
+    protected final Set<File> pending;
+    protected final File from;
+    protected AtomicBoolean isFinished;
 
-	public FileTransmitter(int numberOfThreads, String from, String... to) throws IOException, URISyntaxException {
-		log = Logger.getLogger(getClass().getSimpleName() + " " + to.length);
-		log.log(Level.INFO, "Starting");
-		isFinished = new AtomicBoolean(false);
-		pending = new HashSet<>(Arrays.asList(to));
-		executor = Executors.newFixedThreadPool(numberOfThreads);
-		fis = new FileInputStream(new File(Thread.currentThread().getContextClassLoader().getResource(from).toURI()));
 
-		for (String t : to) {
-			log.log(Level.FINE, "Enqueue " + t);
-			executor.execute(new Transmitter(fis.getChannel(), t, this));
-		}
+    FileTransmitter(int numberOfThreads, File from, File... to) throws IOException, InterruptedException {
+        log = Logger.getLogger(getClass().getSimpleName() + " " +numberOfThreads + "th " + to.length);
+        log.log(Level.INFO, "Starting");
+        isFinished = new AtomicBoolean(false);
+        pending = new HashSet<>(Arrays.asList(to));
+        executor = Executors.newFixedThreadPool(numberOfThreads);
+        this.from = from;
 
-	}
+        for (File destination : to) {
+            log.log(Level.FINE, "Enqueue " + destination);
+            executor.execute(createTransmitter(destination));
+        }
 
-	@Override
-	public void finished(String outPath) {
-		synchronized (pending) {
-			pending.remove(outPath);
-			if (pending.isEmpty()) {
-				isFinished.set(true);
-				try {
-					log.log(Level.FINE, "Stopping");
-					fis.close();
-					executor.shutdown();
-					log.log(Level.INFO, "Stopped");
-				} catch (IOException e) {
-					log.log(Level.WARNING, e.toString());
-				}
-			}
-		}
-	}
-	
-	// 1, 11 , 181 : 3 threads
-	// 1, 8 , 93 : 6 threads
-	// 1, 9, 80: 12 threads
+        synchronized (isFinished) {
+            isFinished.wait();
+        }
+
+    }
+
+    protected abstract Transmitter createTransmitter(File destination) throws FileNotFoundException;
+    protected abstract void cleanup() ;
+
+    protected final TransmitterListener listener = new TransmitterListener() {
+        @Override
+        public void finished(File outfile) {
+            synchronized (pending) {
+                pending.remove(outfile);
+                if (pending.isEmpty()) {
+                    isFinished.set(true);
+                    log.log(Level.FINE, "Stopping");
+                    executor.shutdown();
+                    log.log(Level.INFO, "Stopped");
+                }
+            }
+
+            synchronized (isFinished) {
+                isFinished.notify();
+            }
+        }
+    };
+
 }
