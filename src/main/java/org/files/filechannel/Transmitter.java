@@ -20,8 +20,8 @@ public class Transmitter implements Runnable {
 
 	private final FileInputStream fis;
 
-	public Transmitter(FileInputStream fis, File destination, TransmitterListener listener) {
-		this.sourceChannel = fis.getChannel();
+	public Transmitter(FileChannel fc, File destination, TransmitterListener listener) {
+		this.sourceChannel = fc;
 		this.destination = destination;
 		this.log = Logger.getLogger(destination.toString());
 		this.listener = listener;

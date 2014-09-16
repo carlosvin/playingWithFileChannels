@@ -2,6 +2,7 @@ package org.files.filechannel;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Arrays;
@@ -15,17 +16,19 @@ import java.util.logging.Logger;
 
 public class FileTransmitterOneInputMultiOutput extends  FileTransmitter {
 
-    private final FileInputStream fis;
+    private FileInputStream fis;
 
     public FileTransmitterOneInputMultiOutput(int numberOfThreads, File from, File... to) throws IOException, URISyntaxException,
 			InterruptedException {
         super(numberOfThreads, from, to);
-        fis = new FileInputStream(from);
     }
 
     @Override
-    protected Transmitter createTransmitter(File destination) {
-        return new Transmitter(fis, destination, listener);
+    protected Transmitter createTransmitter(File destination) throws FileNotFoundException {
+        if (fis == null){
+            fis = new FileInputStream(from);
+        }
+        return new Transmitter(fis.getChannel(), destination, listener);
     }
 
     @Override

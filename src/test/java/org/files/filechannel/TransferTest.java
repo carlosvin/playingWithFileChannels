@@ -21,7 +21,7 @@ public class TransferTest {
     private static final int MB_IN_BYTES = 1024 * 1024;
     private static final int[] numberOfOutputFiles = { 32, 64, 128 };
     private static final int[] numberOfThreads = {1, 4, 16, 32 };
-    private static final int[] sizeOfInputFilesMb = { 50, 100, 200};
+    private static final int[] sizeOfInputFilesMb = { 5, 10, 20};
 
     private static final File TMP_DIR = new File("tmp");
     private static final File INPUT_DIR= new File(TMP_DIR, "input");
@@ -36,14 +36,23 @@ public class TransferTest {
 
     @AfterClass
     public static void cleanDirectories() throws IOException {
+        try {
+            System.out.println("waiting for threads end");
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         FileUtils.deleteDirectory(TMP_DIR);
     }
 
     private static void createInputFiles() throws IOException {
         SecureRandom rnd = new SecureRandom();
         for (int size : sizeOfInputFilesMb){
-            byte [] data = new byte[size * MB_IN_BYTES];
-            rnd.nextBytes(data);
+            int bytesSize = size * MB_IN_BYTES;
+            byte [] data = new byte[bytesSize];
+            for (int i=0; i<bytesSize; i+=rnd.nextInt(MB_IN_BYTES)){
+                data[i] = (byte)rnd.nextInt(256);
+            }
             File inputFile=new File(INPUT_DIR,  size + "MB.input");
             inputFiles.add(inputFile);
             FileUtils.writeByteArrayToFile(inputFile, data);
@@ -68,10 +77,10 @@ public class TransferTest {
     }
 
     private void testGeneric (String testName, Class<? extends  FileTransmitter> ftClass) throws IOException, URISyntaxException, InterruptedException {
-        FileWriter fw = new FileWriter(testName + ".data");
+        try(FileWriter fw = new FileWriter(testName + ".data")){
         for (File file : inputFiles) {
             for (int nOut : numberOfOutputFiles) {
-                File [] outputPaths = generateOutputPaths(file.getName(), nOut);
+                File [] outputPaths = generateOutputPaths(testName, file.getName(), nOut);
                 for (int nTh : numberOfThreads) {
                     long startTime = System.currentTimeMillis();
                     if (FileTransmitterDiffInChannel.class.isAssignableFrom(ftClass)){
@@ -84,8 +93,9 @@ public class TransferTest {
                 assertFilesExits(outputPaths);
                 //assertAreEquals(file, outputPaths);
             }
+        }}catch(IOException e){
+            e.printStackTrace();
         }
-        fw.close();
     }
 
     private void assertAreEquals(File input, File[] outputPaths) throws IOException {
@@ -100,10 +110,12 @@ public class TransferTest {
         }
     }
 
-    private static File[] generateOutputPaths(String prefix, int e) {
+    private static File[] generateOutputPaths(String testName, String prefix, int e) throws IOException {
         File[] outputPaths = new File[e];
+        File thisOutputDir = new File(OUTPUT_DIR, testName);
+        FileUtils.forceMkdir(thisOutputDir);
 		for (int i = 0; i < e; i++) {
-			outputPaths[i] = new File (OUTPUT_DIR, prefix + "." + e + "." + i);
+			outputPaths[i] = new File (thisOutputDir, prefix + "." + e + "." + i);
 		}
 		return outputPaths;
 	}

@@ -45,6 +45,7 @@ public abstract class FileTransmitter {
     }
 
     protected abstract Transmitter createTransmitter(File destination) throws FileNotFoundException;
+
     protected abstract void cleanup() ;
 
     protected final TransmitterListener listener = new TransmitterListener() {
@@ -57,6 +58,7 @@ public abstract class FileTransmitter {
                     log.log(Level.FINE, "Stopping");
                     executor.shutdown();
                     log.log(Level.INFO, "Stopped");
+                    cleanup();
                 }
             }
 
