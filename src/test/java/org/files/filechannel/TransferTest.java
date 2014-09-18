@@ -36,12 +36,6 @@ public class TransferTest {
 
     @AfterClass
     public static void cleanDirectories() throws IOException {
-        try {
-            System.out.println("waiting for threads end");
-            Thread.sleep(10000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
         FileUtils.deleteDirectory(TMP_DIR);
     }
 

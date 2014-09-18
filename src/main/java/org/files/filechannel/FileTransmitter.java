@@ -22,13 +22,11 @@ public abstract class FileTransmitter {
 
     protected final Set<File> pending;
     protected final File from;
-    protected AtomicBoolean isFinished;
 
 
     FileTransmitter(int numberOfThreads, File from, File... to) throws IOException, InterruptedException {
         log = Logger.getLogger(getClass().getSimpleName() + " " +numberOfThreads + "th " + to.length);
         log.log(Level.INFO, "Starting");
-        isFinished = new AtomicBoolean(false);
         pending = new HashSet<>(Arrays.asList(to));
         executor = Executors.newFixedThreadPool(numberOfThreads);
         this.from = from;
@@ -38,8 +36,8 @@ public abstract class FileTransmitter {
             executor.execute(createTransmitter(destination));
         }
 
-        synchronized (isFinished) {
-            isFinished.wait();
+        synchronized (pending) {
+            pending.wait();
         }
 
     }
@@ -54,16 +52,12 @@ public abstract class FileTransmitter {
             synchronized (pending) {
                 pending.remove(outfile);
                 if (pending.isEmpty()) {
-                    isFinished.set(true);
                     log.log(Level.FINE, "Stopping");
                     executor.shutdown();
                     log.log(Level.INFO, "Stopped");
                     cleanup();
+                    pending.notify();
                 }
-            }
-
-            synchronized (isFinished) {
-                isFinished.notify();
             }
         }
     };
