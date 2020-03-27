@@ -1,7 +1,13 @@
 .classpath
 .gradle/
+gradle/
 .idea/
 .project
 .settings/
 bin/
 build/
+gradlew
+output/
+gradlew.bat
+
+
